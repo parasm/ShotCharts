@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Shot Charts{% endblock %}
+{% block content %}
+<div class="container">
+	<h1>Shot Charts</h1>
+	<div class="row">
+		<div class="well main-input center col-md-3">
+			<label>Player Name </label>
+			<input class="typeahead form-control" type="text" placeholder="James Harden" id="name">
+			<br/><br/>
+			<label>Season </label>
+			<select class="form-control" name="season" id="season">
+				<option value="2016-17">2016-17</option>
+				<option value="2015-16">2015-16</option>
+				<option value="2014-15">2014-15</option>
+				<option value="2013-14">2013-14</option>
+				<option value="2012-13">2012-13</option>
+				<option value="2011-12">2011-12</option>
+				<option value="2010-11">2010-11</option>
+			</select>
+			<br/>
+			<button class="btn btn-primary" id="draw_btn">Draw Chart</button>
+		</div>
+		<div class="center chart-display col-md-9">
+			<img src='/chart/201935?season=2016-17' width="600px" height="540px" />
+		</div>		
+	</div>
+</div>
+<script type="text/javascript">
+var players = {{ players |safe }}
+var player_names = Object.keys(players);
+
+$("#draw_btn").click(function(){ 
+	$('.chart-display').empty();
+	var season = $('#season').val();
+	var player_name = $('#name').val();
+	var player_id = players[player_name];
+	$('.chart-display').append("<img src='/chart/"+player_id+"?season="+season+"' width='600px' height='540px' id='chart'/>");
+});
+var substringMatcher = function(strs) {
+  return function findMatches(q, cb) {
+    var matches, substringRegex;
+    matches = [];
+    substrRegex = new RegExp(q, 'i');
+    $.each(strs, function(i, str) {
+      if (substrRegex.test(str)) {
+        matches.push(str);
+      }
+    });
+    cb(matches);
+  };
+};
+
+$('.typeahead').typeahead({
+  hint: true,
+  highlight: true,
+  minLength: 1
+},
+{
+  name: 'player_names',
+  source: substringMatcher(player_names)
+});
+</script>
+{% endblock %}
