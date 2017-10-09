@@ -4,7 +4,7 @@ import os
 import requests
 import matplotlib.pyplot as plt
 import seaborn as sns
-from nba_py import shotchart, player
+from nba_py import shotchart, player, team
 from matplotlib.patches import Circle, Rectangle, Arc
 import urllib.request
 import datetime
@@ -93,7 +93,8 @@ def get_players():
 	player_file = open('players.json','w')
 	player_file.write(json.dumps(players_data))
 	player_file.close()
-
+    
+    
 def load_players():
 	player_file = open('players.json','r')
 	return json.load(player_file)
@@ -143,7 +144,61 @@ def player_shots(player_id):
 	response.headers['Content-Type'] = 'image/png'
 	return response
 	#return render_template("index.html")
+def made_shots(team_shot_chart_df):
+    """returns the shotchart of only made shots"""
+    team_made_shot_df= team_shot_chart_df[team_shot_chart_df.SHOT_MADE_FLAG == 1]
+    return team_made_shot_df
+ 
+def missed_shots(team_shot_chart_df):
+    """returns the shotchart of only missed shots"""
+    team_missed_shot_df= team_shot_chart_df[team_shot_chart_df.SHOT_MADE_FLAG == 0]
+    return team_missed_shot_df    
+    
+    
+@app.route('/chart/<team_id>')
+def team_shots(team_id):
+    #What if more args are given like last_n games, a date,etc?
+	season = request.args.get('season')
+	if not season:
+		season = '2016-17'
+	team_shots = shotchart.ShotChart(player_id=0,team_id = team_id, season=season)
+	team_shots_df = team_shots.shot_chart()
+	sns.set_style("white")
+	sns.set_color_codes()
+	#pic = urllib.request.urlretrieve("http://stats.nba.com/media/teams/230x185/"+team_id+".png",team_id+".png")
+	harden_pic = plt.imread(pic[0])
+	fig = plt.figure(figsize=(12,11))
+    team_missed = missed_shots(teamshots_df)
+    team_made = made_shots(teamshots_df)
+	plt.scatter(team_made.LOC_X, team_made.LOC_Y, marker = 'o')
+    plt.scatter(team_missed.LOC_X, team_missed.LOC_Y, marker = 'x')
+	draw_court()
+	# Adjust plot limits to just fit in half court
+	plt.xlim(-250,250)
+	# Descending values along th y axis from bottom to top
+	# in order to place the hoop by the top of plot
+	plt.ylim(422.5, -47.5)
+	# get rid of axis tick labels
+	# plt.tick_params(labelbottom=False, labelleft=False)
+	plt.titleteam_name+' FGA - '+season, y=1.01, fontsize=18)
 
+	img = OffsetImage(harden_pic, zoom=0.6)
+	img.set_offset((850,200))
+	ax = plt.gca()
+	ax.add_artist(img)
+	ax.set_xlabel('')
+	ax.set_ylabel('')
+	#plt.show()
+	canvas=FigureCanvas(fig)
+	png_output = BytesIO()
+	canvas.print_png(png_output)
+	response=make_response(png_output.getvalue())
+	response.headers['Content-Type'] = 'image/png'
+	return response
+	#return render_template("index.html")    
+    
+    
+    
 if __name__ == '__main__':
 	port = int(os.environ.get('PORT', 8000))
 	app.run(host='0.0.0.0', port=port,debug=True)
